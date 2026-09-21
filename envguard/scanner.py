@@ -56,6 +56,7 @@ class Scanner:
                 continue
 
             rel_path = str(path.relative_to(self.root))
+
             if is_ignored(rel_path, self.ignore_patterns):
                 continue
 
@@ -63,19 +64,33 @@ class Scanner:
 
     def scan(self, specific_files: List[str] = None) -> ScanResult:
         """
-        Run a full scan of the project. If `specific_files` is given (a list
-        of paths relative to root), only those files are scanned — this is
-        what the git pre-commit hook uses to check only staged files.
+        Run a full scan of the project.
+
+        If `specific_files` is given, only those files are scanned.
+        This is used by the git pre-commit hook to scan staged files.
+
+        Files matching .envguardignore are skipped in both normal
+        scans and staged scans.
         """
         result = ScanResult(root=str(self.root))
 
         if specific_files is not None:
             candidates = []
+
             for rel in specific_files:
+                # Respect .envguardignore during staged scans too.
+                if is_ignored(rel, self.ignore_patterns):
+                    continue
+
                 p = self.root / rel
+
                 if p.exists() and p.is_file():
                     candidates.append((p, rel))
+
         else:
+            # Normal full-project scan.
+            # _iter_candidate_files() already handles excluded directories
+            # and .envguardignore.
             candidates = list(self._iter_candidate_files())
 
         for path, rel_path in candidates:
@@ -85,14 +100,17 @@ class Scanner:
             if is_sensitive_filename(filename):
                 result.sensitive_files.append(rel_path)
 
+            # Only scan supported text/source files.
             if path.suffix not in SCANNABLE_EXTENSIONS and not filename.startswith(".env"):
                 result.files_skipped += 1
                 continue
 
+            # Skip binary files.
             if is_probably_binary(path):
                 result.files_skipped += 1
                 continue
 
+            # Skip files that are too large.
             try:
                 size = path.stat().st_size
             except OSError:
@@ -103,13 +121,16 @@ class Scanner:
                 result.files_skipped += 1
                 continue
 
+            # Read file contents.
             try:
                 text = path.read_text(errors="ignore")
             except OSError:
                 result.files_skipped += 1
                 continue
 
+            # Run secret detection rules.
             findings = self.detector.scan_text(rel_path, text)
+
             result.findings.extend(findings)
             result.files_scanned += 1
 
