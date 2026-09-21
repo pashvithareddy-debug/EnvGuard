@@ -243,7 +243,7 @@ git clone <https://github.com/pashvithareddy-debug/EnvGuard/>
 cd EnvGuard
 ```
 
-### 2. Install Test Dependencies
+### 2. Install Development/Test Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -589,6 +589,6 @@ MIT License
 Built as a practical cybersecurity and developer-tool project.
 
 </div>
-```
+
 
 
