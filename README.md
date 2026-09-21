@@ -239,7 +239,7 @@ EnvGuard/
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repo-url>
+git clone <https://github.com/pashvithareddy-debug/EnvGuard/>
 cd EnvGuard
 ```
 
