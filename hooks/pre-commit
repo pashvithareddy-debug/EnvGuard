@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# EnvGuard pre-commit hook
+#
+# Install by copying this file into your repo's .git/hooks/pre-commit
+# (or run `python install_hook.py` from the project root, which does this
+# for you).
+#
+# Blocks the commit if EnvGuard finds a HIGH or CRITICAL severity secret,
+# or a sensitive file, among the currently staged files.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+echo "EnvGuard Security Scan"
+echo "──────────────────────"
+echo "Scanning staged files..."
+echo
+
+python3 main.py "$REPO_ROOT" --staged --fail-on high
+STATUS=$?
+
+if [ "$STATUS" -ne 0 ]; then
+    echo
+    echo "Commit blocked by EnvGuard."
+    echo "Remove or mask the sensitive content above before committing."
+    echo "(To bypass in an emergency: git commit --no-verify — not recommended.)"
+    exit 1
+fi
+
+exit 0

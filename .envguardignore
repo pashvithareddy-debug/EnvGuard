@@ -1,0 +1,3 @@
+# Paths EnvGuard should not flag when scanning its own repo.
+# One fnmatch-style pattern per line.
+tests/
